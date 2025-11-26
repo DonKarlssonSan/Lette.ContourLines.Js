@@ -1,0 +1,148 @@
+
+// Control knobs
+
+let cellSize = 40;
+let coordToNoiseScale = 0.04;
+let timeScale = 0.004;
+let thresholdStart = 30;
+let thresholdDelta = 30;
+let showFps = true;
+
+// Global state
+
+let cols, rows;
+let vertices;
+
+function setup() {
+    let container = select('#canvas-container');
+    let canvas = createCanvas(container.width, container.height);
+    canvas.parent('canvas-container');
+    pixelDensity(1);
+    canvas.elt.getContext('2d', { willReadFrequently: true });
+
+    createVertices();
+}
+
+
+function windowResized() {
+    let container = select('#canvas-container');
+    resizeCanvas(container.width, container.height);
+
+    createVertices();
+}
+
+function createVertices() {
+    cols = Math.ceil(width / cellSize) + 1;
+    rows = Math.ceil(height / cellSize) + 1;
+
+    vertices = Array.from({ length: rows }, () => Array(cols).fill(0));
+}
+
+function draw() {
+    updateVertices();
+    drawThresholds();
+
+    if (showFps) {
+        drawFps();
+    }
+}
+
+function updateVertices() {
+    let time = frameCount * timeScale;
+    background("white");
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            let noiseVal = noise(col * coordToNoiseScale, row * coordToNoiseScale, time);
+            let alpha = noiseVal * 255;
+            
+            vertices[row][col] = alpha;
+
+            fill(255, 128, 32, alpha);
+            noStroke();
+            rect(col * cellSize, row * cellSize, cellSize, cellSize);
+        }
+    }
+}
+
+function drawThresholds() {
+    noFill();
+    stroke("black");
+    strokeWeight(1);
+    strokeCap(ROUND);
+
+    for (let threshold = thresholdStart; threshold <= 255; threshold += thresholdDelta) {
+        drawThreshold(threshold);
+    }
+}
+
+function drawThreshold(threshold) {
+    for (let row = 0; row < rows - 1; row++) {
+        for (let col = 0; col < cols - 1; col++) {
+            
+            // Get corner values
+            let a = vertices[row][col];
+            let b = vertices[row][col + 1];
+            let c = vertices[row + 1][col + 1];
+            let d = vertices[row + 1][col];
+            
+            // Calculate marching squares case (4-bit number)
+            let caseValue = 0;
+            if (a > threshold) caseValue |= 1;
+            if (b > threshold) caseValue |= 2;
+            if (c > threshold) caseValue |= 4;
+            if (d > threshold) caseValue |= 8;
+            
+            // Linear interpolation for edge positions
+            let topLerp = (threshold - a) / (b - a);
+            let rightLerp = (threshold - b) / (c - b);
+            let bottomLerp = (threshold - d) / (c - d);
+            let leftLerp = (threshold - a) / (d - a);
+            
+            let x = col * cellSize;
+            let y = row * cellSize;
+
+            let top = {x: x + topLerp * cellSize, y: y};
+            let right = {x: x + cellSize, y: y + rightLerp * cellSize};
+            let bottom = {x: x + bottomLerp * cellSize, y: y + cellSize};
+            let left = {x: x, y: y + leftLerp * cellSize};
+            
+            // Draw lines based on case
+            switch(caseValue) {
+                case 1: case 14:
+                    line(left.x, left.y, top.x, top.y);
+                    break;
+                case 2: case 13:
+                    line(top.x, top.y, right.x, right.y);
+                    break;
+                case 3: case 12:
+                    line(left.x, left.y, right.x, right.y);
+                    break;
+                case 4: case 11:
+                    line(right.x, right.y, bottom.x, bottom.y);
+                    break;
+                case 5:
+                    line(left.x, left.y, top.x, top.y);
+                    line(right.x, right.y, bottom.x, bottom.y);
+                    break;
+                case 6: case 9:
+                    line(top.x, top.y, bottom.x, bottom.y);
+                    break;
+                case 7: case 8:
+                    line(left.x, left.y, bottom.x, bottom.y);
+                    break;
+                case 10:
+                    line(top.x, top.y, right.x, right.y);
+                    line(left.x, left.y, bottom.x, bottom.y);
+                    break;
+            }
+        }
+    }
+}
+
+function drawFps() {
+    fill(0);
+    noStroke();
+    textSize(16);
+    text('FPS: ' + Math.round(frameRate()), 10, 20);
+}
