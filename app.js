@@ -58,9 +58,19 @@ function updateVertices() {
             
             vertices[row][col] = alpha;
 
-            fill(255, 128, 32, alpha);
-            noStroke();
-            rect(col * cellSize, row * cellSize, cellSize, cellSize);
+            // Fill cell if we're not in the first row or column
+            if (row > 0 && col > 0) {
+                let a = vertices[row - 1][col - 1];
+                let b = vertices[row - 1][col];
+                let c = vertices[row][col];
+                let d = vertices[row][col - 1];
+                
+                let avgAlpha = (a + b + c + d) / 4;
+
+                fill(255, 128, 32, avgAlpha);
+                noStroke();
+                rect((col - 1) * cellSize, (row - 1) * cellSize, cellSize, cellSize);
+            }
         }
     }
 }
