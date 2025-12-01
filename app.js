@@ -43,6 +43,13 @@ function noisejsSimplex3D(distScale, timeScale) {
     }
 }
 
+let noises = {
+    p5Noise: p5Noise3D(0.1, 0.0005),
+    simplexNoise: simplexNoise3D(0.05, 0.0002),
+    noisejsPerlin: noisejsPerlin3D(0.1, 0.0004),
+    noisejsSimplex: noisejsSimplex3D(0.05, 0.0002)
+};
+
 function setup() {
     let container = select('#canvas-container');
     let canvas = createCanvas(container.width, container.height);
@@ -54,7 +61,7 @@ function setup() {
     fillColorG = green(fillColor);
     fillColorB = blue(fillColor);
     
-    noiseFn = p5Noise3D(0.1, 0.0005);
+    noiseFn = noises.p5Noise;
 
     createVertices();
 }
@@ -222,20 +229,5 @@ function togglePause() {
 
 function changeNoiseFunction() {
     let select = document.getElementById('noiseSelect');
-    let value = select.value;
-    
-    switch(value) {
-        case 'p5Noise':
-            noiseFn = p5Noise3D(0.1, 0.0005);
-            break;
-        case 'simplexNoise':
-            noiseFn = simplexNoise3D(0.05, 0.0002);
-            break;
-        case 'noisejsPerlin':
-            noiseFn = noisejsPerlin3D(0.1, 0.0004);
-            break;
-        case 'noisejsSimplex':
-            noiseFn = noisejsSimplex3D(0.05, 0.0002);
-            break;
-    }
+    noiseFn = noises[select.value];
 }
