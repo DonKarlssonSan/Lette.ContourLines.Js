@@ -1,6 +1,7 @@
 // Control knobs
 
 let cellSize = 8;
+let timeScale = 0.0002;
 let thresholdStart = 0;
 let thresholdDelta = 15;
 let gradientFillIterations = 1;
@@ -90,7 +91,7 @@ function draw() {
 }
 
 function updateVertices() {
-    let time = Date.now();
+    let time = Date.now() * timeScale;
     background("white");
 
     for (let row = 0; row < rows; row++) {
